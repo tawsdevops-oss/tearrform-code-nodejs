@@ -1,7 +1,13 @@
+########################################
+# ECS Cluster
+########################################
 resource "aws_ecs_cluster" "main" {
   name = "${var.app_name}-cluster"
 }
 
+########################################
+# Security Group
+########################################
 resource "aws_security_group" "ecs_sg" {
   vpc_id = aws_vpc.main.id
 
@@ -20,6 +26,37 @@ resource "aws_security_group" "ecs_sg" {
   }
 }
 
+########################################
+# IAM Role for ECS Task Execution
+########################################
+resource "aws_iam_role" "ecs_task_execution_role" {
+  name = "${var.app_name}-ecs-execution-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        },
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+########################################
+# Attach AWS Managed Policy
+########################################
+resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
+  role       = aws_iam_role.ecs_task_execution_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+########################################
+# ECS Task Definition
+########################################
 resource "aws_ecs_task_definition" "app" {
   family                   = var.app_name
   requires_compatibilities = ["FARGATE"]
@@ -31,19 +68,24 @@ resource "aws_ecs_task_definition" "app" {
 
   container_definitions = jsonencode([
     {
-      name  = var.app_name
-      image = var.image_url
+      name      = var.app_name
+      image     = var.image_url
+      essential = true
 
       portMappings = [
         {
           containerPort = var.container_port
           hostPort      = var.container_port
+          protocol      = "tcp"
         }
       ]
     }
   ])
 }
 
+########################################
+# ECS Service
+########################################
 resource "aws_ecs_service" "app_service" {
   name            = "${var.app_name}-service"
   cluster         = aws_ecs_cluster.main.id
@@ -52,8 +94,8 @@ resource "aws_ecs_service" "app_service" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets         = aws_subnet.public[*].id
-    security_groups = [aws_security_group.ecs_sg.id]
+    subnets          = aws_subnet.public[*].id
+    security_groups  = [aws_security_group.ecs_sg.id]
     assign_public_ip = true
   }
 
