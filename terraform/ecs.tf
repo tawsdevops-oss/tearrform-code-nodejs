@@ -1,13 +1,7 @@
-########################################
-# ECS Cluster
-########################################
 resource "aws_ecs_cluster" "main" {
   name = "${var.app_name}-cluster"
 }
 
-########################################
-# Security Group
-########################################
 resource "aws_security_group" "ecs_sg" {
   vpc_id = aws_vpc.main.id
 
@@ -26,9 +20,6 @@ resource "aws_security_group" "ecs_sg" {
   }
 }
 
-########################################
-# ECS Task Definition
-########################################
 resource "aws_ecs_task_definition" "app" {
   family                   = var.app_name
   requires_compatibilities = ["FARGATE"]
@@ -40,24 +31,21 @@ resource "aws_ecs_task_definition" "app" {
 
   container_definitions = jsonencode([
     {
-      name      = var.app_name
-      image     = var.image_url
+      name  = var.app_name
+      image = var.image_url
+
       essential = true
 
       portMappings = [
         {
           containerPort = var.container_port
           hostPort      = var.container_port
-          protocol      = "tcp"
         }
       ]
     }
   ])
 }
 
-########################################
-# ECS Service
-########################################
 resource "aws_ecs_service" "app_service" {
   name            = "${var.app_name}-service"
   cluster         = aws_ecs_cluster.main.id
