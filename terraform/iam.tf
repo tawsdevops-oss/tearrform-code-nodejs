@@ -32,9 +32,7 @@ data "aws_iam_role" "existing" {
 # Attach Policy (for BOTH cases)
 ########################################
 resource "aws_iam_role_policy_attachment" "ecs_policy" {
-  role = var.create_iam_role ?
-    aws_iam_role.ecs_task_execution_role[0].name :
-    data.aws_iam_role.existing[0].name
+  role = var.create_iam_role ? aws_iam_role.ecs_task_execution_role[0].name : data.aws_iam_role.existing[0].name
 
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
