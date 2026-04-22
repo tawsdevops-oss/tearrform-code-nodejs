@@ -13,3 +13,15 @@ variable "image_url" {
 variable "container_port" {
   default = 3000
 }
+
+variable "create_iam_role" {
+  description = "Create new IAM role or use existing"
+  type        = bool
+  default     = false
+}
+
+variable "iam_role_name" {
+  description = "Existing IAM role name"
+  type        = string
+  default     = "ecsTaskExecutionRole"
+}

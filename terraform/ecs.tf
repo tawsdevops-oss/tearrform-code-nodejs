@@ -37,7 +37,9 @@ resource "aws_ecs_task_definition" "app" {
   memory                   = "512"
 
   # Reference IAM role from iam.tf
-  execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
+  execution_role_arn = var.create_iam_role ?
+  aws_iam_role.ecs_task_execution_role[0].arn :
+  data.aws_iam_role.existing[0].arn
 
   container_definitions = jsonencode([
     {
